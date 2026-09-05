@@ -37,3 +37,16 @@ mongo_data/
 
 # OS Files
 Thumbs.db
+
+# Environment Variables
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Vercel
+.vercel
+
+# Uploads (Abaikan file upload baru, kecuali .gitkeep)
+server/uploads/*
+!server/uploads/.gitkeep
