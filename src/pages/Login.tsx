@@ -1,33 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { 
   Eye, EyeOff, ShieldCheck, ArrowRight, Lock, 
   Mail, User, Loader2, ArrowLeft, CheckCircle2, 
-  Package, Truck, Clock
+  Package, Truck, Clock, KeyRound, Send
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
-export default function Login() {
+interface LoginProps {
+  initialMode?: 'login' | 'register' | 'forgot';
+}
+
+export default function Login({ initialMode = 'login' }: LoginProps) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
-  // State Mode: Login vs Register
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  // Mode: 'login' | 'register' | 'forgot'
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot'>(() => {
+    const queryMode = searchParams.get('mode');
+    if (queryMode === 'forgot' || queryMode === 'register') return queryMode;
+    return initialMode;
+  });
 
-  // Form State
+  // Form State Login & Register
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Form State Forgot Password
+  const [forgotUsername, setForgotUsername] = useState("");
+  const [forgotMessage, setForgotMessage] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+
+  // Handle Login & Register Submit
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (isRegisterMode) {
+      if (authMode === 'register') {
         await axios.post('/api/register', {
           username: username.trim(),
           email: email.trim(),
@@ -35,7 +50,7 @@ export default function Login() {
         });
         
         toast.success("Akun berhasil didaftarkan. Silakan masuk dengan kredensial Anda.", "Registrasi Sukses");
-        setIsRegisterMode(false);
+        setAuthMode('login');
         setPassword("");
       } else {
         const response = await axios.post('/api/login', {
@@ -62,10 +77,28 @@ export default function Login() {
         }
       }
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("Auth error:", error);
       toast.error(error.response?.data?.error || "Gagal memproses autentikasi. Silakan periksa kembali data Anda.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle Forgot Password Submit in-place
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    setForgotMessage("");
+
+    try {
+      const res = await axios.post('/api/forgot-password', { username: forgotUsername.trim() });
+      setForgotMessage(res.data.message || "Tautan pemulihan kata sandi telah dikirim ke alamat email terdaftar Anda.");
+      toast.success("Tautan pemulihan telah dikirim ke email terdaftar.", "Instruksi Terkirim");
+    } catch (error: any) {
+      console.error("Forgot password error:", error);
+      toast.error(error.response?.data?.error || "Username tidak ditemukan dalam sistem kami.");
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -178,169 +211,293 @@ export default function Login() {
         {/* Center Card */}
         <div className="w-full max-w-md mx-auto my-auto py-6">
           
-          {/* Header Segmented Switcher */}
-          <div className="mb-8">
-            <div className="flex bg-slate-200/80 p-1 rounded-xl mb-6 shadow-inner">
-              <button
-                type="button"
-                onClick={() => setIsRegisterMode(false)}
-                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                  !isRegisterMode
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Masuk Akun
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsRegisterMode(true)}
-                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                  isRegisterMode
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Daftar Baru
-              </button>
-            </div>
-
-            <h2 className="text-2xl sm:text-3xl font-bold font-display text-slate-900 tracking-tight">
-              {isRegisterMode ? "Buat Akun Pembeli Baru" : "Selamat Datang Kembali"}
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1.5">
-              {isRegisterMode 
-                ? "Lengkapi formulir berikut untuk membuat akun kemitraan resmi." 
-                : "Masukkan kredensial terdaftar untuk mengakses dashboard Anda."}
-            </p>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-            
-            {/* Username Input */}
-            <div>
-              <label className="block font-bold text-slate-700 mb-1.5">
-                Username Akun
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <User size={16} />
-                </div>
-                <input 
-                  type="text" 
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 outline-none transition shadow-2xs"
-                  placeholder="Masukkan username Anda"
-                  autoComplete="username"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Email Input (Register Only) */}
-            {isRegisterMode && (
-              <div className="animate-in fade-in duration-200">
-                <label className="block font-bold text-slate-700 mb-1.5">
-                  Alamat Email Aktif
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Mail size={16} />
-                  </div>
-                  <input 
-                    type="email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 outline-none transition shadow-2xs"
-                    placeholder="nama@perusahaan.com"
-                    autoComplete="email"
-                    required
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Password Input */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="font-bold text-slate-700">
-                  Kata Sandi
-                </label>
-                {!isRegisterMode && (
-                  <Link 
-                    to="/forgot-password" 
-                    className="text-[11px] font-semibold text-amber-700 hover:text-amber-800 hover:underline transition"
-                  >
-                    Lupa sandi?
-                  </Link>
-                )}
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Lock size={16} />
-                </div>
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-11 py-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 outline-none transition shadow-2xs"
-                  placeholder={isRegisterMode ? "Minimal 6 karakter" : "Masukkan kata sandi"}
-                  autoComplete={isRegisterMode ? "new-password" : "current-password"}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition"
-                  title={showPassword ? "Sembunyikan sandi" : "Tampilkan sandi"}
-                  aria-label={showPassword ? "Sembunyikan sandi" : "Tampilkan sandi"}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <div className="pt-3">
+          {/* ==================================================== */}
+          {/* VIEW 1: FORGOT PASSWORD (PEMULIHAN KATA SANDI)       */}
+          {/* ==================================================== */}
+          {authMode === 'forgot' ? (
+            <div className="animate-in fade-in zoom-in-95 duration-200">
+              
+              {/* Back to Login Button */}
               <button 
-                type="submit" 
-                disabled={loading}
-                className="w-full bg-slate-950 hover:bg-slate-900 active:scale-[0.98] text-white font-bold py-3.5 rounded-xl text-xs tracking-wide transition-all shadow-md shadow-slate-950/10 flex items-center justify-center gap-2 disabled:opacity-60"
+                type="button"
+                onClick={() => {
+                  setAuthMode('login');
+                  setForgotMessage("");
+                }} 
+                className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 mb-6 transition group"
               >
-                {loading ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin text-amber-400" />
-                    <span>Memproses...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>{isRegisterMode ? "Daftar Akun Kemitraan" : "Masuk ke Dashboard"}</span>
-                    <ArrowRight size={15} />
-                  </>
-                )}
+                <div className="w-7 h-7 rounded-lg bg-slate-200/80 flex items-center justify-center text-slate-600 group-hover:bg-slate-300 transition">
+                  <ArrowLeft size={14} />
+                </div>
+                <span>Kembali ke Halaman Masuk</span>
               </button>
-            </div>
 
-            {/* Bottom Switch Mode Text */}
-            <div className="text-center pt-5 border-t border-slate-200/80">
-              <p className="text-xs text-slate-500">
-                {isRegisterMode ? "Sudah memiliki akun terdaftar? " : "Belum memiliki akun kemitraan? "}
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setIsRegisterMode(!isRegisterMode);
-                    setPassword("");
-                  }}
-                  className="text-amber-700 font-bold hover:text-amber-800 hover:underline transition"
-                >
-                  {isRegisterMode ? "Masuk di sini" : "Daftar akun baru"}
-                </button>
-              </p>
-            </div>
+              {/* Icon & Title */}
+              <div className="mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-700 flex items-center justify-center mb-4">
+                  <KeyRound size={22} />
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-bold font-display text-slate-900 tracking-tight">
+                  Pemulihan Kata Sandi
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1.5 leading-relaxed">
+                  Masukkan <b>Username</b> akun Anda. Sistem akan memverifikasi dan mengirimkan tautan reset kata sandi ke email terdaftar.
+                </p>
+              </div>
 
-          </form>
+              {/* Success Message or Form */}
+              {forgotMessage ? (
+                <div className="space-y-5 animate-in fade-in duration-300">
+                  <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-200/70 text-emerald-900 text-xs">
+                    <div className="flex items-center gap-2.5 font-bold text-emerald-950 mb-1.5">
+                      <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                      <span>Instruksi Berhasil Dikirim</span>
+                    </div>
+                    <p className="text-emerald-800 leading-relaxed pl-7">
+                      {forgotMessage}
+                    </p>
+                    <p className="text-[11px] text-emerald-700/80 mt-3 pt-3 border-t border-emerald-200/60 pl-7">
+                      Periksa kotak masuk (inbox) atau folder spam pada email Anda dalam beberapa saat.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode('login');
+                      setForgotMessage("");
+                    }}
+                    className="w-full bg-slate-950 hover:bg-slate-900 active:scale-[0.98] text-white font-bold py-3.5 rounded-xl text-xs tracking-wide transition shadow-xs"
+                  >
+                    Kembali Masuk Akun
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleForgotSubmit} className="space-y-4 text-xs">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1.5">
+                      Username Terdaftar
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <User size={16} />
+                      </div>
+                      <input 
+                        type="text" 
+                        placeholder="Ketik username akun Anda"
+                        value={forgotUsername}
+                        onChange={(e) => setForgotUsername(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl font-medium text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 outline-none transition shadow-2xs"
+                        required
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  
+                  <button 
+                    type="submit" 
+                    disabled={forgotLoading || !forgotUsername.trim()}
+                    className="w-full mt-2 bg-slate-950 hover:bg-slate-900 active:scale-[0.98] text-white font-bold py-3.5 rounded-xl transition flex justify-center items-center gap-2 shadow-xs disabled:opacity-50"
+                  >
+                    {forgotLoading ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin text-amber-400" />
+                        <span>Mengirimkan Tautan...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send size={15} />
+                        <span>Kirim Tautan Pemulihan</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
+
+              {/* Bottom Support Note */}
+              <div className="mt-8 pt-6 border-t border-slate-200/80 text-center">
+                <p className="text-[11px] text-slate-400">
+                  Mengalami kendala pemulihan akun? Hubungi administrasi PT Radhika Narya Daruna via WhatsApp resmi.
+                </p>
+              </div>
+
+            </div>
+          ) : (
+            /* ==================================================== */
+            /* VIEW 2: LOGIN & REGISTER                            */
+            /* ==================================================== */
+            <div className="animate-in fade-in duration-200">
+              
+              {/* Header Segmented Switcher */}
+              <div className="mb-8">
+                <div className="flex bg-slate-200/80 p-1 rounded-xl mb-6 shadow-inner">
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode('login')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                      authMode === 'login'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Masuk Akun
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode('register')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                      authMode === 'register'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Daftar Baru
+                  </button>
+                </div>
+
+                <h2 className="text-2xl sm:text-3xl font-bold font-display text-slate-900 tracking-tight">
+                  {authMode === 'register' ? "Buat Akun Pembeli Baru" : "Selamat Datang Kembali"}
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1.5">
+                  {authMode === 'register' 
+                    ? "Lengkapi formulir berikut untuk membuat akun kemitraan resmi." 
+                    : "Masukkan kredensial terdaftar untuk mengakses dashboard Anda."}
+                </p>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleAuthSubmit} className="space-y-4 text-xs">
+                
+                {/* Username Input */}
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1.5">
+                    Username Akun
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <User size={16} />
+                    </div>
+                    <input 
+                      type="text" 
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 outline-none transition shadow-2xs"
+                      placeholder="Masukkan username Anda"
+                      autoComplete="username"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Email Input (Register Only) */}
+                {authMode === 'register' && (
+                  <div className="animate-in fade-in duration-200">
+                    <label className="block font-bold text-slate-700 mb-1.5">
+                      Alamat Email Aktif
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Mail size={16} />
+                      </div>
+                      <input 
+                        type="email" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 outline-none transition shadow-2xs"
+                        placeholder="nama@perusahaan.com"
+                        autoComplete="email"
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Password Input */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="font-bold text-slate-700">
+                      Kata Sandi
+                    </label>
+                    {authMode === 'login' && (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setAuthMode('forgot');
+                          setForgotUsername(username);
+                          setForgotMessage("");
+                        }}
+                        className="text-[11px] font-semibold text-amber-700 hover:text-amber-800 hover:underline transition"
+                      >
+                        Lupa sandi?
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Lock size={16} />
+                    </div>
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full pl-10 pr-11 py-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 outline-none transition shadow-2xs"
+                      placeholder={authMode === 'register' ? "Minimal 6 karakter" : "Masukkan kata sandi"}
+                      autoComplete={authMode === 'register' ? "new-password" : "current-password"}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition"
+                      title={showPassword ? "Sembunyikan sandi" : "Tampilkan sandi"}
+                      aria-label={showPassword ? "Sembunyikan sandi" : "Tampilkan sandi"}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <div className="pt-3">
+                  <button 
+                    type="submit" 
+                    disabled={loading}
+                    className="w-full bg-slate-950 hover:bg-slate-900 active:scale-[0.98] text-white font-bold py-3.5 rounded-xl text-xs tracking-wide transition-all shadow-md shadow-slate-950/10 flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin text-amber-400" />
+                        <span>Memproses...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{authMode === 'register' ? "Daftar Akun Kemitraan" : "Masuk ke Dashboard"}</span>
+                        <ArrowRight size={15} />
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Bottom Switch Mode Text */}
+                <div className="text-center pt-5 border-t border-slate-200/80">
+                  <p className="text-xs text-slate-500">
+                    {authMode === 'register' ? "Sudah memiliki akun terdaftar? " : "Belum memiliki akun kemitraan? "}
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setAuthMode(authMode === 'register' ? 'login' : 'register');
+                        setPassword("");
+                      }}
+                      className="text-amber-700 font-bold hover:text-amber-800 hover:underline transition"
+                    >
+                      {authMode === 'register' ? "Masuk di sini" : "Daftar akun baru"}
+                    </button>
+                  </p>
+                </div>
+
+              </form>
+            </div>
+          )}
 
         </div>
 

@@ -599,7 +599,7 @@ const AppContent: React.FC = () => {
     return products.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5);
   }, [searchQuery, products]);
 
-  const isLoginPage = location.pathname === '/login';
+  const isLoginPage = location.pathname === '/login' || location.pathname === '/forgot-password';
   const isAdminPage = location.pathname.startsWith('/admin');
 
   return (
@@ -837,7 +837,7 @@ const AppContent: React.FC = () => {
           <Route path="/location" element={<LocationSection isStandalone={true} />} />
           <Route path="/login" element={<Login />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/forgot-password" element={<Login initialMode="forgot" />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
         </Routes>
       </main>
