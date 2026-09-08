@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import axios from 'axios'; 
 import ProductCard from './components/ProductCard';
-import { Search, ShoppingCart, Trash2, Plus, Minus, Sparkles, X, MapPin, Phone, ArrowRight, Menu as MenuIcon, ChevronRight, LogOut, User as UserIcon, ChevronDown } from 'lucide-react';
+import { Search, ShoppingCart, Trash2, Plus, Minus, Sparkles, X, MapPin, Phone, ArrowRight, Menu as MenuIcon, ChevronRight, LogOut, User as UserIcon, ChevronDown, LayoutDashboard } from 'lucide-react';
 import { Product, CartItem, ReceiptData } from './types';
 import ChatBot from './components/Chatbot';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
@@ -262,11 +262,16 @@ const handleAddToCart = (p: Product, q: number) => {
   const [username, setUsername] = useState("");
   const [scrolled, setScrolled] = useState(false);
 
-  // Check Login Status on Route Change
+  // Check Login Status on Route Change via Session
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedRole = localStorage.getItem('role');
-    const storedUser = localStorage.getItem('username');
+    // Bersihkan residu token localStorage lama jika ada
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('username');
+
+    const token = sessionStorage.getItem('token');
+    const storedRole = sessionStorage.getItem('role');
+    const storedUser = sessionStorage.getItem('username');
     
     if (token) {
       setIsLoggedIn(true);
@@ -371,12 +376,16 @@ const handleAddToCart = (p: Product, q: number) => {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    sessionStorage.clear();
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('username');
     localStorage.removeItem('shopping-cart');
     setIsLoggedIn(false);
     setUsername("");
     setCart([]);
     setShowProfileMenu(false);
+    toast.info("Anda telah keluar dari sesi login.", "Logout");
     navigate('/');
   };
 
@@ -502,8 +511,16 @@ const handleAddToCart = (p: Product, q: number) => {
                       </button>
                       {showProfileMenu && (
                           <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-[100]">
-                            <div className="p-2">
-                                <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 font-medium">
+                            <div className="p-2 space-y-1">
+                                {sessionStorage.getItem('role') === 'ADMIN' && (
+                                  <button 
+                                    onClick={() => { setShowProfileMenu(false); navigate('/admin/dashboard'); }} 
+                                    className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg flex items-center gap-2 font-medium transition"
+                                  >
+                                    <LayoutDashboard size={16} /> Dashboard Admin
+                                  </button>
+                                )}
+                                <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 font-medium transition">
                                   <LogOut size={16} /> Keluar
                                 </button>
                             </div>

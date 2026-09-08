@@ -72,10 +72,10 @@ export default function AdminDashboard() {
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
 
-  // 1. CEK LOGIN & AMBIL DATA
+  // 1. CEK LOGIN & AMBIL DATA (Session Storage)
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('username'); 
+    const token = sessionStorage.getItem('token');
+    const user = sessionStorage.getItem('username'); 
 
     if (!token) {
       navigate('/login');
@@ -109,7 +109,7 @@ export default function AdminDashboard() {
 
   // HAPUS USER
   const handleDeleteUser = async (userId: number, usernameTarget: string) => {
-    const currentAdmin = localStorage.getItem('username');
+    const currentAdmin = sessionStorage.getItem('username');
     if (usernameTarget === currentAdmin) {
       toast.warning("Anda tidak bisa menghapus akun Anda sendiri saat sedang aktif login.");
       return;
@@ -147,7 +147,11 @@ export default function AdminDashboard() {
 
   // 2. FUNGSI HANDLE TOMBOL
   const handleLogout = () => {
-    localStorage.clear();
+    sessionStorage.clear();
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('username');
+    toast.info("Anda telah keluar dari dashboard admin.", "Logout");
     navigate('/login');
   };
 
@@ -756,7 +760,7 @@ export default function AdminDashboard() {
                           {user.username.charAt(0).toUpperCase()}
                         </div>
                         {user.username}
-                        {user.username === localStorage.getItem('username') && (
+                        {user.username === sessionStorage.getItem('username') && (
                           <span className="text-[10px] bg-stone-200 px-2 py-0.5 rounded-full text-stone-600">You</span>
                         )}
                       </td>
@@ -778,7 +782,7 @@ export default function AdminDashboard() {
                           onClick={() => handleDeleteUser(user.id, user.username)}
                           className="text-stone-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition"
                           title="Hapus User"
-                          disabled={user.username === localStorage.getItem('username')}
+                          disabled={user.username === sessionStorage.getItem('username')}
                         >
                           <Trash2 size={18} />
                         </button>

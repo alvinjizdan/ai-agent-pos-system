@@ -40,10 +40,13 @@ export default function Login() {
           password
         });
         
-        // Simpan Token & Data User
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('role', response.data.role);
-        localStorage.setItem('username', response.data.username);
+        // Simpan Token & Data User ke Session (Otomatis berakhir saat browser ditutup)
+        sessionStorage.setItem('token', response.data.token);
+        sessionStorage.setItem('role', response.data.role);
+        sessionStorage.setItem('username', response.data.username);
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        localStorage.removeItem('username');
 
         toast.success(`Selamat datang kembali, ${response.data.username}!`, "Login Berhasil");
 
