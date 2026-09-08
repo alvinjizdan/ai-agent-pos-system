@@ -24,7 +24,12 @@ exports.getProducts = async (req, res) => {
 exports.createProduct = async (req, res) => {
   try {
     const { name, category, price, stock, description } = req.body;
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : '';
+    let imageUrl = '';
+
+    if (req.file) {
+      const base64Image = req.file.buffer.toString('base64');
+      imageUrl = `data:${req.file.mimetype};base64,${base64Image}`;
+    }
 
     const newProduct = await Product.create({
       name, category, price, stock, description, image: imageUrl
@@ -42,7 +47,8 @@ exports.updateProduct = async (req, res) => {
     let updateData = { name, category, price, stock, description };
 
     if (req.file) {
-      updateData.image = `/uploads/${req.file.filename}`;
+      const base64Image = req.file.buffer.toString('base64');
+      updateData.image = `data:${req.file.mimetype};base64,${base64Image}`;
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true });
