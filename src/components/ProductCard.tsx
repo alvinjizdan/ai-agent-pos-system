@@ -1,119 +1,159 @@
 import React, { useState } from 'react';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Plus, Minus } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
-// Pastikan tipe datanya menerima jumlah (quantity)
 interface Product {
-  id: string;
+  id: string | number;
   name: string;
   price: number;
   image: string;
   category: string;
   description?: string;
   stock?: number;
-  satuan?: string; // Opsional (default: kg)
+  satuan?: string;
 }
 
 interface ProductCardProps {
   product: Product;
-  onAddToCart: (product: Product, quantity: number) => void; // Kita update ini biar terima quantity
+  onAddToCart: (product: Product, quantity: number) => void;
 }
-
-
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
   const { toast } = useToast();
-  // State untuk menyimpan angka inputan (Default 1)
   const [inputQty, setInputQty] = useState<number>(1);
 
+  const isOutOfStock = product.stock !== undefined && product.stock <= 0;
+
   const handleAdd = () => {
+    if (isOutOfStock) {
+      toast.warning("Maaf, stok produk ini sedang kosong.");
+      return;
+    }
     if (inputQty > 0) {
       onAddToCart(product, inputQty);
-      setInputQty(1); // Reset ke 1 setelah masuk keranjang
+      setInputQty(1);
       toast.success(`Berhasil menambahkan ${inputQty} ${product.satuan || 'kg'} ke keranjang!`, product.name);
     } else {
       toast.warning("Jumlah pesanan minimal 1");
     }
   };
 
-  const isOutOfStock = product.stock === 0;
+  const handleQtyChange = (delta: number) => {
+    const next = inputQty + delta;
+    if (next >= 1) {
+      setInputQty(next);
+    }
+  };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-slate-100 flex flex-col h-full">
-      {/* Gambar Produk */}
-      <div className="relative h-48 overflow-hidden group">
+    <div className="bg-white rounded-2xl border border-stone-200/80 hover:border-orange-500/30 hover:shadow-xl hover:shadow-stone-900/5 transition-all duration-300 flex flex-col h-full overflow-hidden group">
+      {/* Product Image Frame */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-stone-100">
         <img 
-          src={product.image} 
+          src={product.image || '/bannerbg.png'} 
           alt={product.name} 
-          className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out"
+          loading="lazy"
         />
-        <span
-          className={`absolute top-2 right-2 px-3 py-1 text-xs font-bold rounded-full 
-          ${isOutOfStock 
-            ? "bg-red-100 text-red-600" // Warna jika Stok Habis (Merah)
-            : "bg-green-100 text-green-800" // Warna jika Stok Ready (Hijau)
-          }`}
-        >
-          {isOutOfStock ? "Stok Habis" : "Stok Ready"}
-        </span>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        
+        {/* Status Pill Badge */}
+        <div className="absolute top-3 right-3">
+          <span
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md border ${
+              isOutOfStock 
+                ? "bg-rose-500/10 text-rose-700 border-rose-500/20" 
+                : "bg-emerald-500/10 text-emerald-800 border-emerald-500/20"
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${isOutOfStock ? "bg-rose-500" : "bg-emerald-600"}`} />
+            {isOutOfStock ? "Stok Habis" : "Stok Ready"}
+          </span>
+        </div>
       </div>
 
-      {/* Konten Produk */}
-      <div className="p-3 md:p-5 flex flex-col flex-grow">
-        <div className="mb-4">
-          <span className="text-xs font-bold text-black tracking-wider uppercase bg-slate-200 px-2 py-1 rounded">
+      {/* Product Details */}
+      <div className="p-4 sm:p-5 flex flex-col flex-grow">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-orange-700 bg-orange-50 px-2.5 py-0.5 rounded-md border border-orange-200/60">
             {product.category}
           </span>
-          <h3 className="text-xl font-bold text-slate-800 mt-2 mb-1 leading-tight">{product.name}</h3>
-          <p className="text-sm text-slate-500 line-clamp-2">{product.description}</p>
+          {product.stock !== undefined && (
+            <span className="text-xs text-stone-600 font-medium">
+              Sisa: <b className="text-stone-800">{product.stock} {product.satuan || 'kg'}</b>
+            </span>
+          )}
         </div>
 
-        <div className="mt-auto pt-4 border-t border-slate-100">
-          <div className="flex justify-between items-end mb-4">
-            <div>
-              <p className="text-xs text-slate-400 mb-1">Harga per {product.satuan || 'kg'}</p>
-              <p className="text-xl font-bold text-orange-600">
-                Rp {product.price.toLocaleString('id-ID')}
-              </p>
+        <h3 className="text-lg font-bold text-stone-900 tracking-tight leading-snug group-hover:text-orange-600 transition-colors">
+          {product.name}
+        </h3>
+
+        {product.description && (
+          <p className="text-xs text-stone-600 line-clamp-2 leading-relaxed mt-1.5">
+            {product.description}
+          </p>
+        )}
+
+        {/* Price and Cart Controls */}
+        <div className="mt-auto pt-4 border-t border-stone-100 flex flex-col gap-3">
+          <div>
+            <span className="text-[11px] font-medium text-stone-600 block">Harga per {product.satuan || 'kg'}</span>
+            <div className="text-xl font-bold text-orange-600 tracking-tight">
+              Rp {product.price.toLocaleString('id-ID')}
             </div>
           </div>
 
-          {/* 🔥 BAGIAN INPUT MANUAL (KG/TON) 🔥 */}
-          <div className="flex flex-col xl:flex-row gap-2">
-            <div className="relative w-full xl:w-1/3">
-              <input 
-                 type="number" 
-                 min="1"
-                 disabled={isOutOfStock} 
-                 value={inputQty}
-                 onChange={(e) => setInputQty(Number(e.target.value))}
-                 className={`w-full border-2 rounded-lg py-2 px-2 text-center font-bold focus:outline-none
-                   ${isOutOfStock 
-                     ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed" 
-                     : "border-slate-200 text-slate-700 focus:border-green-500"
-                   }
-                 `}
-               />
-               <span className="absolute right-1 top-2.5 text-xs text-slate-400 font-medium bg-white px-1">
-                 {product.satuan || 'kg'}
-               </span>
+          {/* Stepper and Action Button */}
+          <div className="flex items-center gap-2">
+            {/* Quantity Stepper */}
+            <div className="flex items-center border border-stone-200 rounded-xl bg-stone-50 overflow-hidden shrink-0">
+              <button
+                type="button"
+                onClick={() => handleQtyChange(-1)}
+                disabled={isOutOfStock || inputQty <= 1}
+                className="w-8 h-9 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-200/60 active:scale-90 transition disabled:opacity-40"
+                aria-label="Kurangi jumlah"
+              >
+                <Minus size={14} />
+              </button>
+              <input
+                type="number"
+                min="1"
+                disabled={isOutOfStock}
+                value={inputQty}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  setInputQty(isNaN(val) || val < 1 ? 1 : val);
+                }}
+                className="w-10 h-9 text-center text-xs font-bold bg-transparent text-stone-800 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <button
+                type="button"
+                onClick={() => handleQtyChange(1)}
+                disabled={isOutOfStock}
+                className="w-8 h-9 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-200/60 active:scale-90 transition disabled:opacity-40"
+                aria-label="Tambah jumlah"
+              >
+                <Plus size={14} />
+              </button>
             </div>
 
-            <button 
+            {/* Add to Cart CTA */}
+            <button
+              type="button"
               onClick={handleAdd}
               disabled={isOutOfStock}
-              className={`flex-1 py-2 rounded-lg font-bold transition-colors flex items-center justify-center gap-2 text-white
-                ${isOutOfStock
-                  ? "bg-gray-400 cursor-not-allowed" // Style tombol mati
-                  : "bg-green-700 hover:bg-green-600" // Style tombol hidup
-                }
-              `}
+              className={`flex-1 h-9 px-3 rounded-xl font-semibold text-xs tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.97] ${
+                isOutOfStock
+                  ? "bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed"
+                  : "bg-slate-900 hover:bg-orange-600 text-white shadow-slate-900/10"
+              }`}
             >
-              <ShoppingCart size={18} />
-              <span>{isOutOfStock ? "Habis" : "Pesan"}</span>
+              <ShoppingCart size={15} />
+              <span>{isOutOfStock ? "Habis" : "Tambah"}</span>
             </button>
           </div>
-
         </div>
       </div>
     </div>
