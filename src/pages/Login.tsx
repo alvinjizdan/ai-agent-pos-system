@@ -182,7 +182,7 @@ export default function Login({ initialMode = 'login' }: LoginProps) {
 
         {/* Footer Meta */}
         <div className="relative z-10 flex items-center justify-between text-xs text-slate-500 pt-6 border-t border-white/5">
-          <span>Hak Cipta 2026 PT Radhika Narya Daruna</span>
+          <span>Hak Cipta 2026 Alvin Jizdan</span>
           <Link to="/" className="hover:text-amber-400 transition flex items-center gap-1">
             <span>Kembali ke Beranda</span>
             <ArrowRight size={12} />

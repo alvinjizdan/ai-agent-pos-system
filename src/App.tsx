@@ -878,7 +878,7 @@ const AppContent: React.FC = () => {
             </div>
 
             <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-              <p>© {new Date().getFullYear()} PT Radhika Narya Daruna. Hak Cipta Dilindungi Undang-Undang.</p>
+              <p>© {new Date().getFullYear()} Alvin Jizdan. Hak Cipta Dilindungi Undang-Undang.</p>
               <div className="flex gap-4">
                 <span>Standar Mutu Komoditas Kelapa</span>
               </div>
