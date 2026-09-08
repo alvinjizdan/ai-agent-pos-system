@@ -339,7 +339,7 @@ export default function AdminDashboard() {
             <img src="/logobulet.png" alt="PT Radhika Narya Daruna" className="w-8 h-8 object-contain" />
           </div>
           <div className="overflow-hidden">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-white truncate">RADHIKA NARYA</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-white truncate font-display">RADHIKA NARYA</h2>
             <p className="text-[10px] text-slate-400 font-medium tracking-tight">Backoffice Operasional</p>
           </div>
         </div>
@@ -584,7 +584,7 @@ export default function AdminDashboard() {
                  activeTab === 'orders' ? 'Antrean Pesanan Masuk' : 'Kelola Pengguna'}
               </span>
             </div>
-            <h1 className="text-lg font-bold text-slate-900 tracking-tight mt-0.5">
+            <h1 className="text-lg font-bold font-display text-slate-900 tracking-tight mt-0.5">
               PT Radhika Narya Daruna
             </h1>
           </div>
@@ -644,7 +644,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold text-slate-900 tabular-nums">
+                    <h3 className="text-2xl font-bold font-display text-slate-900 tabular-nums">
                       Rp {filteredRevenue.toLocaleString('id-ID')}
                     </h3>
                     <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
@@ -668,7 +668,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold text-slate-900 tabular-nums">
+                    <h3 className="text-2xl font-bold font-display text-slate-900 tabular-nums">
                       {filteredOrders.filter(o => o.status !== 'Batal').length}
                       <span className="text-xs font-normal text-slate-500 ml-1.5">Pesanan</span>
                     </h3>
@@ -687,7 +687,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold text-slate-900 tabular-nums">
+                    <h3 className="text-2xl font-bold font-display text-slate-900 tabular-nums">
                       {products.length}
                       <span className="text-xs font-normal text-slate-500 ml-1.5">Komoditas</span>
                     </h3>
@@ -706,7 +706,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold text-slate-900 tabular-nums">
+                    <h3 className="text-2xl font-bold font-display text-slate-900 tabular-nums">
                       {users.length}
                       <span className="text-xs font-normal text-slate-500 ml-1.5">Akun</span>
                     </h3>

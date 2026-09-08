@@ -85,21 +85,21 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
           )}
         </div>
 
-        <h3 className="text-lg font-bold text-stone-900 tracking-tight leading-snug group-hover:text-orange-600 transition-colors">
+        <h3 className="text-base font-bold font-display text-slate-900 tracking-tight leading-snug group-hover:text-amber-700 transition-colors">
           {product.name}
         </h3>
 
         {product.description && (
-          <p className="text-xs text-stone-600 line-clamp-2 leading-relaxed mt-1.5">
+          <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed mt-1.5">
             {product.description}
           </p>
         )}
 
         {/* Price and Cart Controls */}
-        <div className="mt-auto pt-4 border-t border-stone-100 flex flex-col gap-3">
+        <div className="mt-auto pt-4 border-t border-slate-100 flex flex-col gap-3">
           <div>
-            <span className="text-[11px] font-medium text-stone-600 block">Harga per {product.satuan || 'kg'}</span>
-            <div className="text-xl font-bold text-orange-600 tracking-tight">
+            <span className="text-[11px] font-medium text-slate-500 block">Harga per {product.satuan || 'kg'}</span>
+            <div className="text-xl font-bold font-display text-amber-700 tracking-tight tabular-nums">
               Rp {product.price.toLocaleString('id-ID')}
             </div>
           </div>
@@ -107,12 +107,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
           {/* Stepper and Action Button */}
           <div className="flex items-center gap-2">
             {/* Quantity Stepper */}
-            <div className="flex items-center border border-stone-200 rounded-xl bg-stone-50 overflow-hidden shrink-0">
+            <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden shrink-0">
               <button
                 type="button"
                 onClick={() => handleQtyChange(-1)}
                 disabled={isOutOfStock || inputQty <= 1}
-                className="w-8 h-9 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-200/60 active:scale-90 transition disabled:opacity-40"
+                className="w-8 h-9 flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 active:scale-90 transition disabled:opacity-40"
                 aria-label="Kurangi jumlah"
               >
                 <Minus size={14} />
@@ -126,7 +126,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
                   const val = parseInt(e.target.value, 10);
                   setInputQty(isNaN(val) || val < 1 ? 1 : val);
                 }}
-                className="w-10 h-9 text-center text-xs font-bold bg-transparent text-stone-800 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-10 h-9 text-center text-xs font-bold font-mono tabular-nums bg-transparent text-slate-800 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <button
                 type="button"

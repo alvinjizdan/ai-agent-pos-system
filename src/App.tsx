@@ -35,7 +35,7 @@ const HomePage = ({ navigateTo, products, addToCart }: { navigateTo: (path: stri
           Supplier Komoditas Kopra & Kelapa Resmi
         </div>
 
-        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold font-serif tracking-tight text-white mb-6 leading-[1.15]">
+        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold font-display tracking-tight text-white mb-6 leading-[1.12]">
           Pasokan Terjaga,<br/>
           <span className="text-orange-400">Bisnis Anda Tetap Menyala.</span>
         </h1>
@@ -115,7 +115,7 @@ const HomePage = ({ navigateTo, products, addToCart }: { navigateTo: (path: stri
             <span className="text-xs font-bold tracking-widest uppercase text-orange-600 mb-2 block">
               Katalog Unggulan
             </span>
-            <h2 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-display font-bold text-slate-900 tracking-tight">
               Komoditas Pilihan Terbaik
             </h2>
             <p className="text-slate-500 text-sm mt-1 max-w-lg">
@@ -153,7 +153,7 @@ const AboutSection = ({ isStandalone = false }: { isStandalone?: boolean }) => (
         <span className="text-xs font-bold tracking-widest uppercase text-orange-600 mb-2 block">
           Profil Perusahaan
         </span>
-        <h2 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900 tracking-tight leading-snug">
+        <h2 className="text-3xl sm:text-4xl font-display font-bold text-slate-900 tracking-tight leading-snug">
           Dedikasi untuk Kualitas Komoditas Kelapa Nusantara.
         </h2>
         <p className="text-slate-500 text-sm mt-3 leading-relaxed">
@@ -172,13 +172,13 @@ const AboutSection = ({ isStandalone = false }: { isStandalone?: boolean }) => (
                 alt="Proses Sortir Kopra" 
               />
               <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200/80 text-slate-800">
-                <span className="text-2xl font-bold font-serif text-orange-600 block mb-1">100%</span>
+                <span className="text-2xl font-bold font-display text-orange-600 block mb-1">100%</span>
                 <span className="text-xs text-slate-600 leading-tight block">Sortir manual teliti tanpa campuran benda asing.</span>
               </div>
             </div>
             <div className="space-y-4 pt-8">
               <div className="p-5 rounded-2xl bg-slate-900 text-white shadow-xl">
-                <span className="text-2xl font-bold font-serif text-orange-400 block mb-1">B2B</span>
+                <span className="text-2xl font-bold font-display text-orange-400 block mb-1">B2B</span>
                 <span className="text-xs text-slate-300 leading-tight block">Kesiapan kontrak suplai berkala untuk industri minyak.</span>
               </div>
               <img 
@@ -192,7 +192,7 @@ const AboutSection = ({ isStandalone = false }: { isStandalone?: boolean }) => (
 
         {/* Narrative & Pillars */}
         <div className="lg:col-span-6 space-y-6">
-          <h3 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 tracking-tight">
+          <h3 className="text-2xl sm:text-3xl font-display font-bold text-slate-900 tracking-tight">
             Mengapa Pelaku Industri Memilih Kami?
           </h3>
           <p className="text-slate-600 leading-relaxed text-sm sm:text-base">
@@ -257,7 +257,7 @@ const MenuPage: React.FC<MenuPageProps> = ({ searchQuery, setSearchQuery, select
           <span className="text-xs font-bold tracking-widest uppercase text-orange-600 mb-2 block">
             Katalog & Pemesanan
           </span>
-          <h1 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900 tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-display font-bold text-slate-900 tracking-tight">
             Pilihan Komoditas Siap Pasok
           </h1>
           <p className="text-slate-500 text-sm mt-2">
@@ -342,7 +342,7 @@ const LocationSection = ({ isStandalone = false }: { isStandalone?: boolean }) =
         <span className="text-xs font-bold tracking-widest uppercase text-orange-600 mb-2 block">
           Lokasi & Kontak
         </span>
-        <h2 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900 tracking-tight">
+        <h2 className="text-3xl sm:text-4xl font-display font-bold text-slate-900 tracking-tight">
           Pusat Operasional Kami
         </h2>
         <p className="text-slate-500 text-sm mt-2">
@@ -628,7 +628,7 @@ const AppContent: React.FC = () => {
                   className="h-9 w-auto object-contain group-hover:scale-105 transition-transform" 
                 />
                 <div>
-                  <span className="text-base font-bold font-serif tracking-tight text-white block leading-none">
+                  <span className="text-base font-bold font-display tracking-tight text-white block leading-none">
                     PT Radhika Narya Daruna
                   </span>
                   <span className="text-[10px] text-orange-400 font-medium tracking-wider uppercase block mt-1">
@@ -850,7 +850,7 @@ const AppContent: React.FC = () => {
               <div className="md:col-span-6 space-y-4">
                 <div className="flex items-center gap-3">
                   <img src="/logobulet.png" alt="Logo" className="h-10 w-auto" />
-                  <span className="text-lg font-bold font-serif text-white">PT Radhika Narya Daruna</span>
+                  <span className="text-lg font-bold font-display text-white">PT Radhika Narya Daruna</span>
                 </div>
                 <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
                   Mitra terpercaya pasokan kopra dan komoditas kelapa Indonesia. Menjamin kontinuitas stok bahan baku industri Anda dengan standar kadar air andalan.
@@ -898,7 +898,7 @@ const AppContent: React.FC = () => {
             {/* Drawer Header */}
             <div className="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50/80">
               <div>
-                <h2 className="text-lg font-bold font-serif text-slate-900">Keranjang Belanja</h2>
+                <h2 className="text-lg font-bold font-display text-slate-900">Keranjang Belanja</h2>
                 <p className="text-xs text-stone-500 mt-0.5">{cart.length} jenis komoditas dipilih</p>
               </div>
               <button 
