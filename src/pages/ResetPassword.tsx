@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Save, Lock } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 export default function ResetPassword() {
   const { token } = useParams(); // Mengambil token unik dari URL
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -16,10 +18,10 @@ export default function ResetPassword() {
     try {
       // Kirim password baru + token ke backend
       await axios.post(`/api/reset-password/${token}`, { newPassword: password });
-      alert("Sukses! Password berhasil diubah. Silakan Login dengan password baru.");
+      toast.success("Password berhasil diubah. Silakan Login dengan password baru.", "Sukses Reset Password");
       navigate('/login');
     } catch (error: any) {
-      alert(error.response?.data?.error || "Token kadaluarsa atau tidak valid.");
+      toast.error(error.response?.data?.error || "Token kadaluarsa atau tidak valid.");
     } finally {
       setLoading(false);
     }

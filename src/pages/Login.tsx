@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Sparkles } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const [email, setEmail] = useState("");
   
@@ -29,7 +31,7 @@ export default function Login() {
        password,
       });
       
-        alert("Registrasi Berhasil! Silakan Login.");
+        toast.success("Registrasi akun berhasil! Silakan masuk dengan akun Anda.");
         setIsRegisterMode(false); // Kembali ke mode login
       } else {
         // --- LOGIKA LOGIN ---
@@ -43,7 +45,7 @@ export default function Login() {
         localStorage.setItem('role', response.data.role);
         localStorage.setItem('username', response.data.username);
 
-        alert("Login Sukses!");
+        toast.success(`Selamat datang kembali, ${response.data.username}!`, "Login Berhasil");
 
         // Arahkan sesuai Role
         if (response.data.role === 'ADMIN') {
@@ -54,7 +56,7 @@ export default function Login() {
       }
     } catch (error: any) {
       console.error(error);
-      alert(error.response?.data?.error || "Terjadi kesalahan sistem");
+      toast.error(error.response?.data?.error || "Terjadi kesalahan pada sistem");
     } finally {
       setLoading(false);
     }

@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { ArrowLeft, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 
 export default function ForgotPassword() {
   const [username, setUsername] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,9 +20,10 @@ export default function ForgotPassword() {
       // Kirim username ke backend untuk dicek emailnya
       const res = await axios.post('/api/forgot-password', { username });
       setMessage(res.data.message); // Tampilkan pesan sukses dari server
+      toast.success("Link reset password telah dikirim ke email terdaftar.", "Email Terkirim");
     } catch (error: any) {
       console.error(error);
-      alert(error.response?.data?.error || "Gagal memproses permintaan.");
+      toast.error(error.response?.data?.error || "Gagal memproses permintaan.");
     } finally {
       setLoading(false);
     }

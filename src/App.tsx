@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import AdminDashboard from './pages/AdminDashboard';
+import { ToastProvider, useToast } from './context/ToastContext';
 
 // Kategori Tetap Statis
 const CATEGORIES = ["Semua", "Bahan Baku", "Kopra", "Kelapa Utuh"];
@@ -213,6 +214,7 @@ const LocationSection = ({ isStandalone = false }: { isStandalone?: boolean }) =
 const AppContent: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
 
   // Scroll to top
   useEffect(() => {
@@ -311,7 +313,7 @@ const handleAddToCart = (p: Product, q: number) => {
   const handleCheckout = async () => {
     // 1. Cek Login
     if (!isLoggedIn) {
-      alert("Silakan Login terlebih dahulu untuk menyelesaikan pesanan.");
+      toast.warning("Silakan Login terlebih dahulu untuk menyelesaikan pesanan.");
       navigate('/login');
       setIsCartOpen(false);
       return;
@@ -319,7 +321,7 @@ const handleAddToCart = (p: Product, q: number) => {
 
     // 2. Cek Keranjang Kosong
     if (cart.length === 0) {
-      alert("Keranjang belanja Anda kosong.");
+      toast.warning("Keranjang belanja Anda masih kosong.");
       return;
     }
 
@@ -339,10 +341,11 @@ const handleAddToCart = (p: Product, q: number) => {
       
       // Console log untuk memastikan sukses
       console.log("Data berhasil disimpan ke Rekap Admin");
+      toast.success("Pesanan berhasil dicatat, membuka WhatsApp...", "Pesanan Dibuat");
 
     } catch (error) {
       console.error("Gagal menyimpan ke database:", error);
-      alert("Terjadi kesalahan sistem, namun Anda tetap akan diarahkan ke WhatsApp.");
+      toast.error("Gagal menyimpan ke database, namun Anda tetap diarahkan ke WhatsApp.");
     }
 
     // --- PROSES KIRIM KE WHATSAPP ---
@@ -674,7 +677,9 @@ const handleAddToCart = (p: Product, q: number) => {
 const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </BrowserRouter>
   );
 };

@@ -6,10 +6,11 @@ import {
   ShoppingCart, Users, Menu, X, Save, Edit, Calendar, Filter, RotateCcw, Loader2
 } from 'lucide-react';
 import AdminChatbot from '../components/AdminChatbot';
+import { useToast } from '../context/ToastContext';
 
 // Tipe Data
 interface Product {
-  id?: number;
+  id?: number | string;
   name: string;
   category: string;
   price: number;
@@ -20,6 +21,7 @@ interface Product {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   // --- STATE DATA ---
   const [products, setProducts] = useState<Product[]>([]);
@@ -99,9 +101,9 @@ export default function AdminDashboard() {
     try {
       await axios.put(`/api/users/${userId}/role`, { role: newRole });
       fetchUsers(); // Refresh tabel
-      alert(`Role berhasil diubah menjadi ${newRole}`);
+      toast.success(`Role berhasil diubah menjadi ${newRole}`);
     } catch (error) {
-      alert("Gagal mengubah role");
+      toast.error("Gagal mengubah role pengguna.");
     }
   };
 
@@ -109,7 +111,7 @@ export default function AdminDashboard() {
   const handleDeleteUser = async (userId: number, usernameTarget: string) => {
     const currentAdmin = localStorage.getItem('username');
     if (usernameTarget === currentAdmin) {
-      alert("Anda tidak bisa menghapus akun Anda sendiri saat sedang login!");
+      toast.warning("Anda tidak bisa menghapus akun Anda sendiri saat sedang aktif login.");
       return;
     }
 
@@ -117,8 +119,9 @@ export default function AdminDashboard() {
       try {
         await axios.delete(`/api/users/${userId}`);
         fetchUsers();
+        toast.success(`User ${usernameTarget} berhasil dihapus.`);
       } catch (error) {
-        alert("Gagal menghapus user");
+        toast.error("Gagal menghapus user.");
       }
     }
   };
@@ -164,8 +167,9 @@ export default function AdminDashboard() {
     try {
       await axios.put(`/api/orders/${orderId}`, { status: newStatus });
       fetchOrders(); 
+      toast.success(`Status pesanan diperbarui menjadi ${newStatus}`);
     } catch (error) {
-      alert("Gagal mengubah status.");
+      toast.error("Gagal memperbarui status pesanan.");
     }
   };
 
@@ -174,8 +178,9 @@ export default function AdminDashboard() {
       try {
         await axios.delete(`/api/orders/${orderId}`);
         fetchOrders(); 
+        toast.success("Riwayat pesanan berhasil dihapus.");
       } catch (error) {
-        alert("Gagal menghapus pesanan.");
+        toast.error("Gagal menghapus pesanan.");
       }
     }
   };
@@ -194,37 +199,50 @@ export default function AdminDashboard() {
     setIsModalOpen(true);
   };
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   // 3. TOMBOL SIMPAN (CREATE / UPDATE)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const data = new FormData();
-    data.append('name', formData.name);
-    data.append('category', formData.category);
-    data.append('price', formData.price.toString());
-    data.append('stock', formData.stock.toString());
-    data.append('description', formData.description || "");
-
+    let imagePayload = formData.image;
     if (imageFile) {
-      data.append('image', imageFile);
+      try {
+        imagePayload = await fileToBase64(imageFile);
+      } catch (err) {
+        toast.error("Gagal memproses file gambar.");
+        return;
+      }
     }
+
+    const payload = {
+      name: formData.name,
+      category: formData.category,
+      price: Number(formData.price),
+      stock: Number(formData.stock),
+      description: formData.description || "",
+      image: imagePayload
+    };
 
     try {
       if (isEditing && formData.id) {
-        await axios.put(`/api/products/${formData.id}`, data, {
-          headers: { 'Content-Type': 'multipart/form-data' } 
-        });
-        alert("Produk berhasil diperbarui!");
+        await axios.put(`/api/products/${formData.id}`, payload);
+        toast.success("Produk berhasil diperbarui!");
       } else {
-        await axios.post('/api/products', data, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        alert("Produk baru berhasil ditambahkan!");
+        await axios.post('/api/products', payload);
+        toast.success("Produk baru berhasil ditambahkan!");
       }
       setIsModalOpen(false);
       fetchProducts(); 
-    } catch (error) {
-      alert("Gagal menyimpan data.");
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Gagal menyimpan data produk.");
       console.error(error);
     }
   };
@@ -233,10 +251,10 @@ export default function AdminDashboard() {
     if (window.confirm("Yakin ingin menghapus produk ini?")) {
       try {
         await axios.delete(`/api/products/${id}`);
-        alert("Produk dihapus.");
+        toast.success("Produk berhasil dihapus.");
         fetchProducts();
       } catch (error) {
-        alert("Gagal menghapus.");
+        toast.error("Gagal menghapus produk.");
       }
     }
   };

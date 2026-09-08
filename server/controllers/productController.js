@@ -23,32 +23,37 @@ exports.getProducts = async (req, res) => {
 
 exports.createProduct = async (req, res) => {
   try {
-    const { name, category, price, stock, description } = req.body;
-    let imageUrl = '';
-
-    if (req.file) {
-      const base64Image = req.file.buffer.toString('base64');
-      imageUrl = `data:${req.file.mimetype};base64,${base64Image}`;
-    }
+    const { name, category, price, stock, description, image } = req.body;
 
     const newProduct = await Product.create({
-      name, category, price, stock, description, image: imageUrl
+      name,
+      category,
+      price: Number(price) || 0,
+      stock: Number(stock) || 0,
+      description: description || '',
+      image: image || ''
     });
 
     res.json({ ...newProduct._doc, id: newProduct._id });
   } catch (error) {
-    res.status(500).json({ error: "Gagal tambah produk" });
+    console.error('Error createProduct:', error);
+    res.status(500).json({ error: "Gagal tambah produk: " + error.message });
   }
 };
 
 exports.updateProduct = async (req, res) => {
   try {
-    const { name, category, price, stock, description } = req.body;
-    let updateData = { name, category, price, stock, description };
+    const { name, category, price, stock, description, image } = req.body;
+    let updateData = {
+      name,
+      category,
+      price: Number(price) || 0,
+      stock: Number(stock) || 0,
+      description: description || ''
+    };
 
-    if (req.file) {
-      const base64Image = req.file.buffer.toString('base64');
-      updateData.image = `data:${req.file.mimetype};base64,${base64Image}`;
+    if (image !== undefined && image !== null && image !== '') {
+      updateData.image = image;
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true });
@@ -57,7 +62,8 @@ exports.updateProduct = async (req, res) => {
     
     res.json({ ...updatedProduct._doc, id: updatedProduct._id });
   } catch (error) {
-    res.status(500).json({ error: "Gagal update produk" });
+    console.error('Error updateProduct:', error);
+    res.status(500).json({ error: "Gagal update produk: " + error.message });
   }
 };
 

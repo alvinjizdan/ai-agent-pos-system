@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShoppingCart } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 // Pastikan tipe datanya menerima jumlah (quantity)
 interface Product {
@@ -21,6 +22,7 @@ interface ProductCardProps {
 
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
+  const { toast } = useToast();
   // State untuk menyimpan angka inputan (Default 1)
   const [inputQty, setInputQty] = useState<number>(1);
 
@@ -28,9 +30,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
     if (inputQty > 0) {
       onAddToCart(product, inputQty);
       setInputQty(1); // Reset ke 1 setelah masuk keranjang
-      alert(`Berhasil menambahkan ${inputQty} ${product.satuan || 'kg'} ke keranjang!`);
+      toast.success(`Berhasil menambahkan ${inputQty} ${product.satuan || 'kg'} ke keranjang!`, product.name);
     } else {
-      alert("Jumlah pesanan minimal 1");
+      toast.warning("Jumlah pesanan minimal 1");
     }
   };
 

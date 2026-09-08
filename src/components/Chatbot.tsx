@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Loader2, Bot, User, ShoppingCart } from 'lucide-react'; // BARU: Tambah icon ShoppingCart
 import { getGeminiResponse } from '../services/geminiService';
+import { useToast } from '../context/ToastContext';
 
 interface ChatBotProps {
   products: any[];
@@ -15,6 +16,7 @@ interface ChatMessage {
 }
 
 const ChatBot: React.FC<ChatBotProps> = ({ products, onAddToCart }) => {
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -45,8 +47,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ products, onAddToCart }) => {
     // 1. Panggil fungsi asli dari props
     onAddToCart(id);
 
-    // 2. Alert (Opsional, untuk penanda saja)
-    alert('Memproses produk ke keranjang...');
+    // 2. Toast Notifikasi
+    toast.info('Memasukkan produk ke keranjang...', 'Chatbot AI');
   };
 
   const handleSend = async () => {
