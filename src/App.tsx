@@ -544,12 +544,16 @@ const AppContent: React.FC = () => {
     const tax = subtotal * 0.1;
     const totalPayment = subtotal + tax;
 
+    let createdOrderCode = '';
     try {
-      await axios.post('/api/orders', {
+      const response = await axios.post('/api/orders', {
         customerName: username,
         items: cart,
         totalPrice: totalPayment
       });
+      if (response.data?.order?.orderCode) {
+        createdOrderCode = response.data.order.orderCode;
+      }
       toast.success("Pesanan berhasil dicatat, membuka WhatsApp...", "Pesanan Dibuat");
     } catch (error) {
       console.error("Gagal menyimpan ke database:", error);
@@ -557,7 +561,12 @@ const AppContent: React.FC = () => {
     }
 
     const phoneNumber = "628886268884"; 
-    let message = `Halo Admin PT Radhika Narya Daruna,\n\nSaya *${username}* ingin memesan komoditas:\n\n`;
+    let message = `Halo Admin PT Radhika Narya Daruna,\n\nSaya *${username}* ingin memesan komoditas:\n`;
+    if (createdOrderCode) {
+      message += `*Kode Pesanan:* ${createdOrderCode}\n\n`;
+    } else {
+      message += `\n`;
+    }
     
     cart.forEach((item, index) => {
       message += `${index + 1}. *${item.name}* (${item.quantity} kg) - Rp ${(item.price * item.quantity).toLocaleString('id-ID')}\n`;

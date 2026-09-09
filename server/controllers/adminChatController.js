@@ -82,25 +82,29 @@ const adminTools = {
         },
         {
             name: "updateOrderStatus",
-            description: "Mengubah status dari sebuah pesanan (order) berdasarkan ID pesanan.",
+            description: "Mengubah status dari sebuah pesanan (order) berdasarkan Kode Pesanan (misalnya 'RND-001') atau ID pesanan.",
             parameters: {
                 type: "OBJECT",
                 properties: {
+                    orderCode: {
+                        type: "STRING",
+                        description: "Kode Pesanan seperti yang tertera pada dashboard admin (contoh: 'RND-001', 'RND-002', 'RND-005')."
+                    },
                     orderId: {
                         type: "STRING",
-                        description: "ID Pesanan (Order ID) yang valid di database Mongoose."
+                        description: "ID Pesanan (Order ID) MongoDB jika ada."
                     },
                     newStatus: {
                         type: "STRING",
                         description: "Status pesanan terbaru. Nilai yang valid hanya: 'Menunggu Konfirmasi', 'Diproses', 'Dikirim', 'Selesai', 'Batal'."
                     }
                 },
-                required: ["orderId", "newStatus"]
+                required: ["newStatus"]
             }
         },
         {
             name: "searchOrder",
-            description: "Mencari data pesanan (order) di database berdasarkan kriteria tertentu (nama pelanggan, ID order, atau status).",
+            description: "Mencari data pesanan (order) di database berdasarkan kriteria tertentu (nama pelanggan, Kode Pesanan seperti 'RND-001', ID order, atau status).",
             parameters: {
                 type: "OBJECT",
                 properties: {
@@ -108,9 +112,13 @@ const adminTools = {
                         type: "STRING",
                         description: "Nama pelanggan atau bagian dari nama pelanggan."
                     },
+                    orderCode: {
+                        type: "STRING",
+                        description: "Kode Pesanan spesifik (contoh: 'RND-001', 'RND-005')."
+                    },
                     orderId: {
                         type: "STRING",
-                        description: "ID Pesanan MongoDB yang spesifik."
+                        description: "ID Pesanan MongoDB jika spesifik."
                     },
                     status: {
                         type: "STRING",
@@ -235,35 +243,86 @@ async function executeSetProductStock(args) {
 async function executeUpdateOrderStatus(args) {
     try {
         const { Types } = require('mongoose');
-        const orderId = String(args.orderId || '').trim();
+        const rawCode = String(args.orderCode || '').trim();
+        const rawId = String(args.orderId || '').trim();
+        const identifier = rawCode || rawId;
 
-        if (!Types.ObjectId.isValid(orderId)) {
-            return { error: `ID Pesanan '${orderId}' tidak valid.` };
+        if (!identifier) {
+            return { error: "Mohon sertakan Kode Pesanan (misal: 'RND-001') atau ID Pesanan." };
         }
 
         const validStatuses = ['Menunggu Konfirmasi', 'Diproses', 'Dikirim', 'Selesai', 'Batal'];
-        const newStatus = String(args.newStatus || '').trim();
-        const matchedStatus = validStatuses.find(s => s.toLowerCase() === newStatus.toLowerCase());
+        const rawStatus = String(args.newStatus || '').trim();
+        const normalizedInput = rawStatus.replace(/\s+/g, ' ').toLowerCase();
+        
+        let matchedStatus = validStatuses.find(s => s.toLowerCase() === normalizedInput);
+        if (!matchedStatus) {
+            if (normalizedInput === 'di proses') matchedStatus = 'Diproses';
+            else if (normalizedInput === 'di kirim') matchedStatus = 'Dikirim';
+        }
 
         if (!matchedStatus) {
-            return { error: `Status '${newStatus}' tidak valid. Harus salah satu dari: ${validStatuses.join(', ')}.` };
+            return { error: `Status '${rawStatus}' tidak valid. Pilihan status yang tersedia: ${validStatuses.join(', ')}.` };
         }
 
-        const order = await Order.findByIdAndUpdate(
-            orderId,
-            { status: matchedStatus },
-            { new: true, runValidators: true }
-        );
+        let order = null;
+
+        // 1. Ekstrak nomor kode jika formatnya RND-xxx atau hanya angka (misal: "RND-001", "rnd-1", "1")
+        const codeMatch = identifier.match(/RND-(\d+)/i) || identifier.match(/^(\d+)$/);
+        let normalizedCode = null;
+        if (codeMatch) {
+            normalizedCode = `RND-${String(parseInt(codeMatch[1], 10)).padStart(3, '0')}`;
+        }
+
+        // Coba cari berdasarkan orderCode di database
+        if (normalizedCode) {
+            order = await Order.findOne({
+                $or: [
+                    { orderCode: new RegExp(`^${normalizedCode}$`, 'i') },
+                    { orderCode: new RegExp(`^${escapeRegex(identifier)}$`, 'i') }
+                ]
+            });
+        }
+
+        // 2. Jika belum ketemu dan identifier adalah valid ObjectId, cari berdasarkan _id
+        if (!order && Types.ObjectId.isValid(identifier)) {
+            order = await Order.findById(identifier);
+        }
+
+        // 3. Jika belum ketemu (misal data lama di DB belum memiliki orderCode), cocokkan urutan kronologis
+        if (!order && codeMatch) {
+            const targetNum = parseInt(codeMatch[1], 10);
+            const allOrdersAsc = await Order.find().sort({ date: 1 });
+            if (targetNum >= 1 && targetNum <= allOrdersAsc.length) {
+                order = allOrdersAsc[targetNum - 1];
+                // Sekaligus backfill orderCode agar permanen
+                if (order && !order.orderCode) {
+                    order.orderCode = `RND-${String(targetNum).padStart(3, '0')}`;
+                }
+            }
+        }
+
+        // 4. Jika masih belum ketemu, coba pencarian regex langsung pada orderCode
+        if (!order) {
+            order = await Order.findOne({ orderCode: new RegExp(escapeRegex(identifier), 'i') });
+        }
 
         if (!order) {
-            return { error: `Pesanan dengan ID '${args.orderId}' tidak ditemukan.` };
+            return { error: `Pesanan dengan kode atau ID '${identifier}' tidak ditemukan di database.` };
         }
+
+        order.status = matchedStatus;
+        await order.save();
+
+        const displayCode = order.orderCode || identifier;
         return {
             success: true,
-            message: `Status pesanan ${args.orderId} berhasil diubah menjadi '${order.status}'.`
+            message: `Status pesanan ${displayCode} (Pelanggan: ${order.customerName}) berhasil diubah menjadi '${order.status}'.`,
+            orderCode: displayCode,
+            status: order.status
         };
     } catch (error) {
-        return { error: `Gagal memperbarui status pesanan: Mungkinkah ID salah format? (${error.message})` };
+        return { error: `Gagal memperbarui status pesanan: ${error.message}` };
     }
 }
 
@@ -276,29 +335,45 @@ async function executeSearchOrder(args) {
             query.customerName = new RegExp(sanitizedName, 'i');
         }
 
-        if (args.orderId && typeof args.orderId === 'string') {
-            const sanitizedId = args.orderId.trim();
+        const rawCode = String(args.orderCode || '').trim();
+        const rawId = String(args.orderId || '').trim();
+        const targetIdentifier = rawCode || rawId;
+
+        if (targetIdentifier) {
             const { Types } = require('mongoose');
-            if (Types.ObjectId.isValid(sanitizedId)) {
-                query._id = sanitizedId;
+            const codeMatch = targetIdentifier.match(/RND-(\d+)/i) || targetIdentifier.match(/^(\d+)$/);
+
+            if (codeMatch) {
+                const normalized = `RND-${String(parseInt(codeMatch[1], 10)).padStart(3, '0')}`;
+                query.$or = [
+                    { orderCode: new RegExp(`^${normalized}$`, 'i') },
+                    { orderCode: new RegExp(`^${escapeRegex(targetIdentifier)}$`, 'i') }
+                ];
+            } else if (Types.ObjectId.isValid(targetIdentifier)) {
+                query._id = targetIdentifier;
             } else {
-                return { success: true, message: `ID pesanan '${sanitizedId}' bukan format yang valid. Pencarian dibatalkan.`, data: [] };
+                query.orderCode = new RegExp(escapeRegex(targetIdentifier), 'i');
             }
         }
 
         if (args.status && typeof args.status === 'string') {
             const validStatuses = ['Menunggu Konfirmasi', 'Diproses', 'Dikirim', 'Selesai', 'Batal'];
-            const capStatus = args.status.trim();
-            const matchedStatus = validStatuses.find(s => s.toLowerCase() === capStatus.toLowerCase());
+            const capStatus = args.status.trim().replace(/\s+/g, ' ').toLowerCase();
+            let matchedStatus = validStatuses.find(s => s.toLowerCase() === capStatus);
+            if (!matchedStatus) {
+                if (capStatus === 'di proses') matchedStatus = 'Diproses';
+                else if (capStatus === 'di kirim') matchedStatus = 'Dikirim';
+            }
+
             if (matchedStatus) {
                 query.status = matchedStatus;
             } else {
-                return { success: true, message: `Status '${capStatus}' tidak dikenal. Pencarian dibatalkan.`, data: [] };
+                return { success: true, message: `Status '${args.status}' tidak dikenal. Pencarian dibatalkan.`, data: [] };
             }
         }
 
         const orders = await Order.find(query)
-            .select('_id customerName status totalPrice date items.name items.quantity')
+            .select('_id orderCode customerName status totalPrice date items.name items.quantity')
             .sort({ date: -1 })
             .limit(5)
             .lean();
@@ -307,8 +382,9 @@ async function executeSearchOrder(args) {
             return { success: true, message: "Tidak ada pesanan yang cocok dengan kriteria.", data: [] };
         }
 
-        const formattedOrders = orders.map(o => ({
+        const formattedOrders = orders.map((o, idx) => ({
             orderId: o._id.toString(),
+            orderCode: o.orderCode || `RND-${String(orders.length - idx).padStart(3, '0')}`,
             customerName: o.customerName,
             status: o.status,
             totalPrice: o.totalPrice,
@@ -334,12 +410,14 @@ const processAdminChat = async (req, res) => {
 
         console.log(`\n[ADMIN AGENT] Pesan masuk: "${message}"`);
 
-        const systemInstruction = `Kamu adalah AI Asisten Admin operasional toko. Tugasmu adalah membantu admin mengelola database toko (seperti mengubah stok barang, status pesanan, dan mencari data pesanan).
+        const systemInstruction = `Kamu adalah AI Asisten Admin operasional toko PT Radhika Narya Daruna. Tugasmu adalah membantu admin mengelola database toko (seperti mengubah stok barang, status pesanan, dan mencari data pesanan).
 
-PENTING:
-- Panggil tools 'searchOrder' jika admin meminta informasi pesanan pelanggan (seperti status order Budi, pesanan terbaru, dll).
-- Jika hasil pencarian dari tools tidak ada, beritahu admin bahwa pesanan tidak ditemukan dengan ramah.
-- Panggil tools 'updateOrderStatus' HANYA JIKA admin secara eksplisit meminta perubahan status dan kamu sudah mengetahui ID Pesanan (Order ID) yang valid. Jika admin meminta mengubah pesanan tanpa memberikan ID yang valid, cari pesanannya terlebih dahulu menggunakan 'searchOrder'.`;
+PANDUAN KODE & ID PESANAN:
+- Di dashboard admin, pesanan ditampilkan dengan "Kode Pesanan" berformat 'RND-001', 'RND-002', 'RND-005', dst.
+- Jika admin menyebutkan kode pesanan (misalnya: "RND-001", "kode 001", atau "pesanan 1"), teruskan nilai tersebut ke parameter 'orderCode' (atau 'orderId') saat memanggil tool 'updateOrderStatus' atau 'searchOrder'.
+- Panggil tool 'searchOrder' jika admin meminta informasi pesanan pelanggan (seperti status order Budi, pesanan RND-001, pesanan terbaru, dll).
+- Jika hasil pencarian dari tool tidak ada, beritahu admin bahwa pesanan tidak ditemukan dengan ramah dan sopan.
+- Panggil tool 'updateOrderStatus' HANYA JIKA admin secara eksplisit meminta perubahan status dan kamu sudah mengetahui Kode Pesanan atau ID pesanan yang valid. Jika admin meminta mengubah pesanan tanpa memberikan kode/ID, cari pesanannya terlebih dahulu menggunakan 'searchOrder'.`;
 
         // Inisialisasi Model Gemini dengan konfigurasi Tools
         const model = genAI.getGenerativeModel({

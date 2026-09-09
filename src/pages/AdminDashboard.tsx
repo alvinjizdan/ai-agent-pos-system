@@ -45,6 +45,7 @@ export default function AdminDashboard() {
   const [productSearch, setProductSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [orderStatusFilter, setOrderStatusFilter] = useState('Semua');
+  const [orderSearch, setOrderSearch] = useState('');
 
   // --- STATE FORM ---
   const [formData, setFormData] = useState<Product>({
@@ -139,6 +140,19 @@ export default function AdminDashboard() {
 
   // FILTER LOGIC: ORDERS
   const filteredOrders = orders.filter((order) => {
+    // Filter pencarian kode pesanan / pelanggan / barang
+    if (orderSearch.trim()) {
+      const searchLower = orderSearch.toLowerCase();
+      const codeMatch = (order.orderCode || '').toLowerCase().includes(searchLower);
+      const nameMatch = (order.customerName || '').toLowerCase().includes(searchLower);
+      let itemMatch = false;
+      try {
+        const items = JSON.parse(order.items || '[]');
+        itemMatch = items.some((i: any) => i.name?.toLowerCase().includes(searchLower));
+      } catch (e) {}
+      if (!codeMatch && !nameMatch && !itemMatch) return false;
+    }
+
     // Filter status
     if (orderStatusFilter !== 'Semua' && order.status !== orderStatusFilter) {
       return false;
@@ -160,6 +174,7 @@ export default function AdminDashboard() {
     setStartDate('');
     setEndDate('');
     setOrderStatusFilter('Semua');
+    setOrderSearch('');
   };
 
   // CALCULATIONS FOR METRICS
@@ -787,8 +802,7 @@ export default function AdminDashboard() {
                           let itemsList = [];
                           try { itemsList = JSON.parse(order.items); } catch(e) {}
                           const orderIndex = orders.findIndex(o => o.id === order.id);
-                          const kodeAngka = orders.length - orderIndex;
-                          const kodePesanan = `RND-${String(kodeAngka).padStart(3, '0')}`;
+                          const kodePesanan = order.orderCode || `RND-${String(orders.length - orderIndex).padStart(3, '0')}`;
 
                           return (
                             <tr key={order.id} className="hover:bg-slate-50/70 transition">
@@ -996,21 +1010,34 @@ export default function AdminDashboard() {
               {/* Order Filtering Bar */}
               <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
                 
-                {/* Status Segmented Buttons */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                  {['Semua', 'Menunggu Konfirmasi', 'Di Proses', 'Di Kirim', 'Selesai', 'Batal'].map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => setOrderStatusFilter(status)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
-                        orderStatusFilter === status
-                          ? 'bg-slate-900 text-white shadow-xs'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  ))}
+                {/* Search Bar & Status Segmented Buttons */}
+                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+                  <div className="relative flex-1 max-w-sm">
+                    <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input 
+                      type="text"
+                      value={orderSearch}
+                      onChange={(e) => setOrderSearch(e.target.value)}
+                      placeholder="Cari kode (misal RND-001) / pelanggan..."
+                      className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 outline-none transition"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 flex-1">
+                    {['Semua', 'Menunggu Konfirmasi', 'Di Proses', 'Di Kirim', 'Selesai', 'Batal'].map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => setOrderStatusFilter(status)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+                          orderStatusFilter === status
+                            ? 'bg-slate-900 text-white shadow-xs'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Date range picker inline */}
@@ -1035,7 +1062,7 @@ export default function AdminDashboard() {
                       />
                     </div>
 
-                    {(startDate || endDate || orderStatusFilter !== 'Semua') && (
+                    {(startDate || endDate || orderStatusFilter !== 'Semua' || orderSearch) && (
                       <button 
                         onClick={handleResetFilter}
                         className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition text-xs font-semibold flex items-center gap-1"
@@ -1079,8 +1106,7 @@ export default function AdminDashboard() {
                           let itemsList = [];
                           try { itemsList = JSON.parse(order.items); } catch(e) {}
                           const orderIndex = orders.findIndex(o => o.id === order.id);
-                          const kodeAngka = orders.length - orderIndex;
-                          const kodePesanan = `RND-${String(kodeAngka).padStart(3, '0')}`;
+                          const kodePesanan = order.orderCode || `RND-${String(orders.length - orderIndex).padStart(3, '0')}`;
 
                           return (
                             <tr key={order.id} className={`hover:bg-slate-50/70 transition ${order.status === 'Batal' ? 'opacity-60 bg-slate-50/50' : ''}`}>
